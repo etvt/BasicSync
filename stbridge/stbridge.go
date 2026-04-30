@@ -556,7 +556,7 @@ func dispatchPeers(app *SyncthingApp, receiver SyncthingStatusReceiver) {
 	receiver.OnPeersUpdated(direct, relay)
 }
 
-func peerCountLoop(
+func appEventLoop(
 	ctx context.Context,
 	evLogger events.Logger,
 	app *SyncthingApp,
@@ -735,7 +735,7 @@ func Run(startup *SyncthingStartupConfig) error {
 		guiCert: guiCert,
 	}
 
-	go peerCountLoop(ctx, evLogger, appWrapper, startup.Receiver)
+	go appEventLoop(ctx, evLogger, appWrapper, startup.Receiver)
 
 	startup.Receiver.OnSyncthingStarted(appWrapper)
 
