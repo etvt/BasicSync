@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - master
+      - claude/peers-count-notification-diIL1
   pull_request:
 jobs:
   build-app:
@@ -34,3 +35,9 @@ jobs:
       - name: Build and test
         # Debug build only since release builds require a signing key.
         run: ./gradlew --no-daemon build -x assembleRelease
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
