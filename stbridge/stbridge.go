@@ -565,11 +565,16 @@ func peerCountLoop(
 	sub := evLogger.Subscribe(events.DeviceConnected | events.DeviceDisconnected)
 	defer sub.Unsubscribe()
 
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
 	dispatchPeers(app, receiver)
 
 	for {
 		select {
 		case <-sub.C():
+			dispatchPeers(app, receiver)
+		case <-ticker.C:
 			dispatchPeers(app, receiver)
 		case <-ctx.Done():
 			return
