@@ -84,6 +84,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
         private val manualMode: Boolean,
         private val preRunAction: PreRunAction?,
         private val showExit: Boolean,
+        val directPeers: Int,
+        val relayPeers: Int,
     ) {
         private val shouldResume: Boolean
             get() = blockedReasons.isEmpty()
@@ -217,6 +219,10 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
 
     @GuardedBy("stateLock")
     private var syncthingApp: SyncthingApp? = null
+    @GuardedBy("stateLock")
+    private var syncthingDirectPeers: Int = 0
+    @GuardedBy("stateLock")
+    private var syncthingRelayPeers: Int = 0
     @GuardedBy("stateLock")
     private var syncthingConflicts = emptyList<String>()
         set(conflicts) {
@@ -423,6 +429,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
                 manualMode = prefs.isManualMode,
                 preRunAction = currentPreRunAction,
                 showExit = prefs.showExit,
+                directPeers = syncthingDirectPeers,
+                relayPeers = syncthingRelayPeers,
             )
 
             val wasChanged = notificationState != lastServiceState
@@ -576,6 +584,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
             deviceStateTracker.updateConnectedDevices(0)
 
             syncthingConflicts = emptyList()
+            syncthingDirectPeers = 0
+            syncthingRelayPeers = 0
             syncthingApp = null
 
             stateChanged()
@@ -606,6 +616,16 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
     @WorkerThread
     override fun onConnectedDevicesUpdated(count: Int) {
         deviceStateTracker.updateConnectedDevices(count)
+    }
+
+    @WorkerThread
+    override fun onPeersUpdated(direct: Int, relay: Int) {
+        synchronized(stateLock) {
+            syncthingDirectPeers = direct
+            syncthingRelayPeers = relay
+
+            stateChanged()
+        }
     }
 
     data class GuiInfo(

@@ -261,6 +261,16 @@
     <string name="notification_action_stop">Stop</string>
     <!-- Button shown in the persistent notification to exit the app entirely until the next reboot or the user starts it again. -->
     <string name="notification_action_exit">Exit</string>
+    <!-- Status text showing number of directly connected peers in the persistent notification when Syncthing is running. -->
+    <plurals name="notification_persistent_direct_peers">
+        <item quantity="one">• %d direct connection</item>
+        <item quantity="other">• %d direct connections</item>
+    </plurals>
+    <!-- Status text showing number of relay-connected peers in the persistent notification when Syncthing is running. -->
+    <plurals name="notification_persistent_relay_peers">
+        <item quantity="one">• %d relay connection</item>
+        <item quantity="other">• %d relay connections</item>
+    </plurals>
 
     <!-- Syncing is blocked because local storage permissions have not been granted. -->
     <string name="blocked_reason_no_storage_permissions">• Storage permissions denied</string>

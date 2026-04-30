@@ -296,6 +296,11 @@ type SyncthingStatusReceiver interface {
 	OnBusyFoldersUpdated(count int32)
 
 	OnConnectedDevicesUpdated(count int32)
+
+	// Can be sent before OnSyncthingStarted (with 0/0), and after
+	// OnSyncthingStopped (with 0/0). A relay connection is one whose type
+	// starts with "relay-"; all others are counted as direct.
+	OnPeersUpdated(direct int32, relay int32)
 }
 
 // db.DB is internal, so it's unnameable and we can't create a function that
@@ -529,6 +534,49 @@ func startEventLoop(
 	return nil
 }
 
+func dispatchPeers(app *SyncthingApp, receiver SyncthingStatusReceiver) {
+	stats := app.app.Internals.ConnectionStats()
+	conns, ok := stats["connections"].(map[string]model.ConnectionStats)
+	if !ok {
+		return
+	}
+
+	var direct, relay int32
+	for _, cs := range conns {
+		if !cs.Connected {
+			continue
+		}
+		if strings.HasPrefix(cs.Type, "relay-") {
+			relay++
+		} else {
+			direct++
+		}
+	}
+
+	receiver.OnPeersUpdated(direct, relay)
+}
+
+func peerCountLoop(
+	ctx context.Context,
+	evLogger events.Logger,
+	app *SyncthingApp,
+	receiver SyncthingStatusReceiver,
+) {
+	sub := evLogger.Subscribe(events.DeviceConnected | events.DeviceDisconnected)
+	defer sub.Unsubscribe()
+
+	dispatchPeers(app, receiver)
+
+	for {
+		select {
+		case <-sub.C():
+			dispatchPeers(app, receiver)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
 type SyncthingStartupConfig struct {
 	DeviceModel string
 	Proxy       string
@@ -686,6 +734,8 @@ func Run(startup *SyncthingStartupConfig) error {
 		cfg:     cfg,
 		guiCert: guiCert,
 	}
+
+	go peerCountLoop(ctx, evLogger, appWrapper, startup.Receiver)
 
 	startup.Receiver.OnSyncthingStarted(appWrapper)
 

@@ -105,6 +105,28 @@ class Notifications(private val context: Context) {
                     }
                 })
                 style = Notification.BigTextStyle()
+            } else if (runState == SyncthingService.RunState.RUNNING
+                && (state.directPeers > 0 || state.relayPeers > 0)) {
+                setContentText(buildString {
+                    if (state.directPeers > 0) {
+                        append(context.resources.getQuantityString(
+                            R.plurals.notification_persistent_direct_peers,
+                            state.directPeers,
+                            state.directPeers,
+                        ))
+                    }
+                    if (state.relayPeers > 0) {
+                        if (state.directPeers > 0) {
+                            append('\n')
+                        }
+                        append(context.resources.getQuantityString(
+                            R.plurals.notification_persistent_relay_peers,
+                            state.relayPeers,
+                            state.relayPeers,
+                        ))
+                    }
+                })
+                style = Notification.BigTextStyle()
             }
 
             for (action in state.actions) {
